@@ -1,5 +1,4 @@
-# Silentium
-# Hack The Box
+# Silentium Hack The Box
 
 A penetration testing lab documenting the discovery and exploitation of vulnerabilities in a self-hosted Git service and an AI workflow automation platform.
 
