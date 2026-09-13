@@ -62,6 +62,8 @@ staging.silentium.htb
 
 The staging application became the primary focus of my investigation.
 
+![sub](staging.silentium.htb.png)
+
 ### Impact
 
 The exposed reset token could be used to reset an account's password without the original account credentials.
