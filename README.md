@@ -74,6 +74,8 @@ The vulnerability was associated with:
 
 The GitHub Advisory Database identified affected Flowise versions as `3.0.5` and below, with `3.0.6` listed as the patched version. <a href="https://github.com/advisories/GHSA-wgpv-6j63-x5ph"> here </a>
 
+![exploit](CVE-2025-58434.png)
+
 
 ### Impact
 
