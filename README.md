@@ -27,7 +27,7 @@ I started by scanning the target to identify exposed ports and services.
 ```bash
 nmap -A -p22,80 <TARGET_IP>
 ```
-
+![nmap](/NMAP.png)
 ### Findings
 | Port | Service | Observation               |
 | ---- | ------- | ------------------------- |
@@ -52,6 +52,7 @@ gobuster vhost \
   -w /usr/share/wordlists/dirb/common.txt \
   --append-domain
 ```
+![subdomain](subdomain.png)
 
 This revealed a staging subdomain:
 
