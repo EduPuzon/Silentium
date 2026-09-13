@@ -112,7 +112,7 @@ I examined:
 
 I also investigated how Flowise handled requests to its internal services.
 
-
+![api](API.png)
 ![subdomain](Shell.png)
 
 ## 4. Remote Code Execution
