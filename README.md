@@ -129,33 +129,80 @@ I used this behavior to establish a reverse shell in the authorized lab environm
 uid=0(root) gid=0(root) groups=...
 ```
 
-This demonstrated remote command execution with root-level privileges in the observed execution context.
+## 5. Pivoting to the Host
 
-## 5. Post-Exploitation Enumeration
+After obtaining a shell inside the Docker container, I began investigating how to access the underlying host machine.
 
-After obtaining shell access, I examined the environment to understand the application's configuration and available services.
+Credential Discovery
 
-The investigation included:
+I enumerated the container's environment variables using:
 
-* Environment variables and application credentials.
-* Running processes and listening services.
-* Localhost-only services.
-* Application directories and configuration files.
-* SSH access and available user accounts.
+env
 
-I identified additional application components running locally, including a Gogs Git service.
+This revealed sensitive application configuration, including credentials for the local user ben.
+
+Since SSH was exposed on port 22, I used the discovered credentials to authenticate as ben on the host machine.
+```text
+SSH Access
+ssh ben@silentium.htb
+```
+After successfully authenticating, I gained access to the host as the ben user.
+
+User Flag
+
+I retrieved the user flag from Ben's home directory:
+```text
+cat /home/ben/user.txt
+```
+User flag captured!
+
 
 ## 6. Gogs Investigation
 
-I discovered a locally accessible Gogs instance running on port `3001`.
+Privilege Escalation: Gogs Arbitrary File Write (CVE-2025-8110) <a href="https://github.com/zAbuQasem/gogs-CVE-2025-8110.git"> here </a>
 
-I investigated the service and identified a potential connection to:
+After gaining SSH access as ben, I continued enumerating the host to identify potential privilege escalation opportunities.
 
-**CVE-2025-8110 — Gogs remote code execution through Git configuration injection.** <a href="https://github.com/zAbuQasem/gogs-CVE-2025-8110.git"> here </a>
+Gogs Process Enumeration
 
-I examined the vulnerability's proof of concept and investigated the conditions required for exploitation.
+I inspected the running processes using:
 
-This was a separate application-level investigation within the same lab environment.
+ps aux | grep gogs
+
+This revealed a locally running Gogs instance. Further investigation showed that the Gogs web process was running as root.
+
+The service was accessible internally on port 3000 (and was also referenced on port 3001 during my investigation).
+
+SSH Local Port Forwarding
+
+Since the Gogs web interface was only accessible from the host, I used SSH local port forwarding to expose the internal service to my attacking machine.
+
+ssh -L 8080:127.0.0.1:3000 ben@silentium.htb
+
+This forwarded my local port 8080 to port 3000 on the remote host.
+
+I could then access the Gogs web interface through:
+
+http://127.0.0.1:8080
+Vulnerability: CVE-2025-8110
+
+During my investigation, I identified CVE-2025-8110, an arbitrary file write vulnerability affecting Gogs.
+
+The vulnerability is caused by improper handling of symbolic links when files are updated through the Gogs API.
+
+An attacker can create a repository containing a symbolic link that points outside the repository and then update the linked file through the API. This can cause Gogs to write to an arbitrary file using the permissions of the Gogs process.
+
+Because the Gogs web process was running as root, successful exploitation could result in arbitrary file writes with root-level privileges.
+
+Exploitation Overview
+
+The vulnerability investigation involved the following concepts:
+
+Accessing the internal Gogs web interface through SSH port forwarding.
+Investigating the repository and API functionality.
+Understanding how symbolic links can reference files outside a repository.
+Examining how file updates through the API interact with symbolic links.
+Evaluating the impact of the Gogs process running with root privileges. 
 
 ## 7. Key Takeaways
 
