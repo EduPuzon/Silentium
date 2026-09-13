@@ -62,21 +62,6 @@ staging.silentium.htb
 
 The staging application became the primary focus of my investigation.
 
-## 2. Password Reset Token Disclosure
-
-The staging application exposed a password-reset functionality.
-
-While investigating its API, I identified an unauthenticated password-reset token disclosure affecting the Flowise application.
-
-The vulnerability was associated with:
-
-**CVE-2025-58434 — Flowise unauthenticated password-reset token disclosure leading to account takeover.**
-
-The GitHub Advisory Database identified affected Flowise versions as `3.0.5` and below, with `3.0.6` listed as the patched version. <a href="https://github.com/advisories/GHSA-wgpv-6j63-x5ph"> here </a>
-
-![exploit](CVE-2025-58434.png)
-
-
 ### Impact
 
 The exposed reset token could be used to reset an account's password without the original account credentials.
@@ -94,6 +79,22 @@ ben@silentium.htb
 I used this email address when investigating the password-reset functionality.
 
 This discovery provided a potential account to investigate and helped me proceed with the password-reset vulnerability analysis.
+
+## 2. Password Reset Token Disclosure
+
+The staging application exposed a password-reset functionality.
+
+While investigating its API, I identified an unauthenticated password-reset token disclosure affecting the Flowise application.
+
+The vulnerability was associated with:
+
+**CVE-2025-58434 — Flowise unauthenticated password-reset token disclosure leading to account takeover.**
+
+The GitHub Advisory Database identified affected Flowise versions as `3.0.5` and below, with `3.0.6` listed as the patched version. <a href="https://github.com/advisories/GHSA-wgpv-6j63-x5ph"> here </a>
+
+![exploit](CVE-2025-58434.png)
+
+![account](account.png)
 
 ## 3. Flowise API and Authentication
 
