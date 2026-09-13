@@ -80,6 +80,18 @@ The exposed reset token could be used to reset an account's password without the
 
 This provided an authentication foothold in the application.
 
+### User Discovery
+
+While exploring the staging website, I found the username ben on the homepage.
+
+Based on the discovered username and the target's domain, I identified the following email address:
+```text
+ben@silentium.htb
+```
+I used this email address when investigating the password-reset functionality.
+
+This discovery provided a potential account to investigate and helped me proceed with the password-reset vulnerability analysis.
+
 ## 3. Flowise API and Authentication
 
 After obtaining access to the application, I explored its API endpoints and authentication mechanisms.
